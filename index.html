@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>天気予報スニペット</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&family=Train+One&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      table,
+      th,
+      td {
+        border: 1px solid #000;
+        border-collapse: collapse;
+        background-color: #fff;
+      }
+      body {
+        width: 60%;
+        background-color: #ebf6f7;
+        margin: 0 auto;
+        font-family: "Noto Sans JP", sans-serif;
+        font-optical-sizing: auto;
+        font-weight: 300;
+        font-style: normal;
+        transition: background-color 0.5s; /* トランジションを追加 */
+      }
+      h1 {
+        font-family: "Train One", system-ui;
+        font-weight: 400;
+        font-style: normal;
+        font-size: 40px;
+        color: #0f2350;
+        text-align: left;
+      }
+      ul {
+        list-style: none;
+      }
+      img {
+        width: 250px;
+      }
+      div img {
+        margin: 10px;
+      }
+      .threeDays_code img {
+        margin: 0 auto;
+        display: block;
+      }
+
+      .threeDays_code {
+        background-color: rgb(255 255 255 / 60%);
+        border-radius: 10px;
+        box-shadow: 2px 2px 4px gray;
+        margin: 0 auto;
+        display: flex;
+      }
+
+      .target {
+        background-color: rgb(255 255 255 / 60%);
+        border-radius: 10px;
+        padding: 10px;
+        margin: 30px 0;
+        box-shadow: 2px 2px 4px gray;
+      }
+      .target li {
+        font-size: 20px;
+      }
+      .prec {
+        background-color: rgb(255 255 255 / 60%);
+        border-radius: 10px;
+        padding: 5%;
+        margin: 30px 0;
+        box-shadow: 2px 2px 4px gray;
+      }
+
+      .seventh {
+        background-color: rgb(255 255 255 / 60%);
+        border-radius: 10px;
+        padding: 5%;
+        margin: 30px 0;
+        box-shadow: 2px 2px 4px gray;
+      }
+
+      .preseve {
+        display: flex;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>天気予報</h1>
+    <div class="threeDays_code"></div>
+    <div class="target"></div>
+    <div class="preseve">
+      <div class="prec">
+        <div class="threeDays"></div>
+        <div class="precipitation">
+          <table></table>
+        </div>
+      </div>
+      <div class="seventh">
+        <table>
+          <tr>
+            <th>日付</th>
+            <th>天気</th>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <script src="./weathercodes.js"></script>
+    <script>
+      // 東海4県のコード番号をオブジェクトの配列にしておきます。
+      const codeNums = [
+        { 愛知県: 230000 },
+        { 岐阜県: 210000 },
+        { 三重県: 240000 },
+        { 静岡県: 220000 },
+      ];
+
+      // テンプレートリテラルでconst urlに代入します。
+      const url = `https://www.jma.go.jp/bosai/forecast/data/overview_forecast/${codeNums[0]["愛知県"]}.json`;
+
+      // 天気コードに基づいて背景色を変更する関数を定義
+      function changeBackgroundColor(weatherCode) {
+        const hundredsPlace = weatherCode.charAt(0);
+        switch (hundredsPlace) {
+          case "1": // 晴れ
+            document.body.style.backgroundColor = "#87CEEB"; // 空色
+            break;
+          case "2": // 曇り
+            document.body.style.backgroundColor = "#B0C4DE"; // 灰色
+            break;
+          case "3": // 雨
+            document.body.style.backgroundColor = "#4682B4"; // 青色
+            break;
+          case "4": // 雪
+            document.body.style.backgroundColor = "#FFFFFF"; // 白色
+            break;
+          default: // その他
+            document.body.style.backgroundColor = "#F0E68C"; // 薄い黄色
+        }
+      }
+
+      // fetch()でデータを取得する。
+      fetch(url)
+        .then(function (response) {
+          if (response.status !== 200) {
+            console.log(
+              "問題がありました。ステータスコード:" + response.status
+            );
+            return;
+          }
+          // responseのテキストを調べる
+          response.json().then(function (weather) {
+            console.log(weather);
+            const result = document.querySelector(".target");
+            const ulElm = document.createElement("ul");
+            for (const key in weather) {
+              ulElm.insertAdjacentHTML("beforeend", `<li>${weather[key]}</li>`);
+            }
+            result.append(ulElm);
+          });
+        })
+        .catch(function (err) {
+          console.log("Fetchエラー:", err);
+        });
+
+      const weekUrl = `https://www.jma.go.jp/bosai/forecast/data/forecast/${codeNums[0]["愛知県"]}.json`;
+      fetch(weekUrl)
+        .then(function (response) {
+          if (response.status !== 200) {
+            console.log(
+              "問題がありました。ステータスコード:" + response.status
+            );
+            return;
+          }
+          response.json().then(function (data) {
+            console.log(data);
+
+            // 最初の天気コードを使用して背景色を変更
+            const initialWeatherCode =
+              data[0].timeSeries[0].areas[0].weatherCodes[0];
+            changeBackgroundColor(initialWeatherCode);
+
+            const precipAria = document.querySelector(".precipitation");
+            const head1 = document.createElement("h1");
+            head1.innerHTML = `${data[0].timeSeries[1].areas[1].area.name}降水率`;
+            precipAria.insertAdjacentElement("beforebegin", head1);
+
+            const precipTable = document.querySelector(".precipitation table");
+
+            const timeStamp = data[0].timeSeries[1].timeDefines;
+            console.log(timeStamp);
+
+            const pops = data[0].timeSeries[1].areas[1].pops;
+            console.log(pops);
+
+            const trElem1 = document.createElement("tr");
+
+            for (const time of timeStamp) {
+              const date = new Date(time);
+              const thElm = document.createElement("th");
+              thElm.innerHTML = `${date.getHours()}時${date
+                .getMinutes()
+                .toString()
+                .padStart(2, "0")}分`;
+              trElem1.appendChild(thElm);
+              precipTable.appendChild(trElem1);
+            }
+
+            const trElem2 = document.createElement("tr");
+
+            for (const percent of pops) {
+              const thElm = document.createElement("th");
+              thElm.innerHTML = `${percent}%`;
+              trElem2.appendChild(thElm);
+              precipTable.appendChild(trElem2);
+            }
+          });
+        })
+        .catch(function (err) {
+          console.log("Fetchエラー:", err);
+        });
+
+      fetch(weekUrl)
+        .then(function (response) {
+          if (response.status !== 200) {
+            console.log(
+              "問題がありました。ステータスコード:" + response.status
+            );
+            return;
+          }
+          response.json().then(function (data) {
+            const result = document.querySelector(".threeDays_code");
+            const code = data[0].timeSeries[0].areas[0].weatherCodes;
+
+            for (let i = 0; i < code.length; i++) {
+              const image = document.createElement("img");
+              const weathericon = weathercode[code[i]][0];
+              image.src = `https://www.jma.go.jp/bosai/forecast/img/${weathericon}`;
+              result.appendChild(image);
+            }
+          });
+        })
+        .catch(function (err) {
+          console.log("Fetchエラー:", err);
+        });
+
+      fetch(weekUrl)
+        .then(function (response) {
+          if (response.status !== 200) {
+            console.log(
+              "問題がありました。ステータスコード:" + response.status
+            );
+            return;
+          }
+          response.json().then(function (data) {
+            const weekly = data[1].timeSeries[0].areas[0].weatherCodes;
+            const weeklyDate = data[1].timeSeries[0].timeDefines;
+            const dayarray = [
+              "日曜日",
+              "月曜日",
+              "火曜日",
+              "水曜日",
+              "木曜日",
+              "金曜日",
+              "土曜日",
+            ];
+            const seventhArea = document.querySelector(".seventh");
+            const tableElm = document.querySelector(".seventh table");
+            const aichiTitle = document.createElement("h1");
+            aichiTitle.innerHTML = `${data[1].timeSeries[0].areas[0].area.name}週間天気`;
+            seventhArea.insertBefore(aichiTitle, tableElm);
+
+            for (let i = 0; i < weekly.length; i++) {
+              console.log(weekly[i], weeklyDate[i]);
+              const trElm = document.createElement("tr");
+              const tdElmData = document.createElement("td");
+              const tdElmWeather = document.createElement("td");
+              tdElmData.innerHTML = `${
+                new Date(weeklyDate[i]).getMonth() + 1
+              }月 ${new Date(weeklyDate[i]).getDate()}日（${
+                dayarray[new Date(weeklyDate[i]).getDay()]
+              }）`;
+              trElm.appendChild(tdElmData);
+              tdElmWeather.innerHTML = weathercode[weekly[i]][3];
+              trElm.appendChild(tdElmWeather);
+              tableElm.appendChild(trElm);
+            }
+          });
+        })
+        .catch(function (err) {
+          console.log("Fetchエラー:", err);
+        });
+
+      fetch(weekUrl)
+        .then(function (response) {
+          if (response.status !== 200) {
+            console.log(
+              "問題がありました。ステータスコード:" + response.status
+            );
+            return;
+          }
+          response.json().then(function (data) {
+            const code = data[0].timeSeries[0].areas[0].weatherCodes;
+
+            for (let i = 0; i < code.length; i++) {
+              console.log(code[i]);
+              let hundredsPlace = code[i].charAt(0);
+              if (hundredsPlace === "1") {
+                console.log("晴れ");
+              } else if (hundredsPlace === "2") {
+                console.log("曇り");
+              } else if (hundredsPlace === "3") {
+                console.log("雨");
+              } else {
+                console.log("その他");
+              }
+            }
+          });
+        })
+        .catch(function (err) {
+          console.log("Fetchエラー:", err);
+        });
+    </script>
+  </body>
+</html>
